@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "888995170199",
+    "project_id": "inventory-management-sys-ae340",
+    "storage_bucket": "inventory-management-sys-ae340.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:888995170199:android:357969d486ee40659ee6d2",
+        "android_client_info": {
+          "package_name": "com.example.inventory_manager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCde20b6Wq55kaHY380Zo4hVLPunfT6ivc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
