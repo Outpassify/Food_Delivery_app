@@ -96,15 +96,15 @@ class _DeliveryManagementScreenState extends State<DeliveryManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Delivery Management'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: _showFilterOptions,
-          ),
-        ],
-      ),
+      // appBar: AppBar(
+      //   // title: const Text('Delivery Management'),
+      //   actions: [
+      //     IconButton(
+      //       icon: const Icon(Icons.filter_list),
+      //       onPressed: _showFilterOptions,
+      //     ),
+      //   ],
+      // ),
       body: ListView.builder(
         itemCount: deliveryPersons.length,
         itemBuilder: (context, index) {
