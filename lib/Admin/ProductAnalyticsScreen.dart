@@ -1,442 +1,470 @@
-// import 'package:flutter/material.dart';
-// import 'package:syncfusion_flutter_charts/charts.dart';
-// import 'package:intl/intl.dart';
-// import 'dart:math';
+import 'package:flutter/material.dart';
 
+void main() {
+  runApp(MyApp());
+}
 
-// class ProductAnalyticsDashboard extends StatefulWidget {
-//   final String productId;
-  
-//   const ProductAnalyticsDashboard({Key? key, required this.productId}) : super(key: key);
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Product Analysis',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: ProductAnalysisScreen(),
+    );
+  }
+}
 
-//   @override
-//   _ProductAnalyticsDashboardState createState() => _ProductAnalyticsDashboardState();
-// }
+class ProductAnalysisScreen extends StatefulWidget {
+  @override
+  _ProductAnalysisScreenState createState() => _ProductAnalysisScreenState();
+}
 
-// class _ProductAnalyticsDashboardState extends State<ProductAnalyticsDashboard> {
-//   TimeRange _selectedRange = TimeRange.week;
-//   bool _showDetails = false;
-//   List<AnalyticsData> _analyticsData = [];
-//   bool _isLoading = true;
+class _ProductAnalysisScreenState extends State<ProductAnalysisScreen> {
+  // Dummy data
+  final List<Map<String, dynamic>> _salesData = [
+    {'day': 'Mon', 'value': 1200},
+    {'day': 'Tue', 'value': 1800},
+    {'day': 'Wed', 'value': 900},
+    {'day': 'Thu', 'value': 2100},
+    {'day': 'Fri', 'value': 1500},
+    {'day': 'Sat', 'value': 3000},
+    {'day': 'Sun', 'value': 2700},
+  ];
 
-//   @override
-//   void initState() {
-//     super.initState();
-//     _fetchAnalyticsData();
-//   }
+  final List<Map<String, dynamic>> _topProducts = [
+    {'name': 'Wireless Headphones', 'sales': 2450, 'rating': 4.8, 'image': Icons.headset},
+    {'name': 'Smart Watch', 'sales': 1890, 'rating': 4.5, 'image': Icons.watch},
+    {'name': 'Running Shoes', 'sales': 1230, 'rating': 4.3, 'image': Icons.directions_run},
+  ];
 
-//   Future<void> _fetchAnalyticsData() async {
-//     setState(() => _isLoading = true);
-//     // Simulate API call
-//     await Future.delayed(Duration(seconds: 1));
+  final List<Map<String, dynamic>> _categories = [
+    {'name': 'Electronics', 'percentage': 65, 'color': Colors.blue},
+    {'name': 'Clothing', 'percentage': 42, 'color': Colors.green},
+    {'name': 'Home Goods', 'percentage': 38, 'color': Colors.orange},
+  ];
+
+  String _selectedTimeRange = 'Last 30 Days';
+  String _selectedCategory = 'All Categories';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Product Insights'),
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.filter_alt),
+            onPressed: () => _showFilterDialog(context),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildDateSelector(),
+            SizedBox(height: 20),
+            _buildSummaryCards(),
+            SizedBox(height: 20),
+            _buildSalesChart(),
+            SizedBox(height: 20),
+            _buildCategoryPerformance(),
+            SizedBox(height: 20),
+            _buildTopProducts(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateSelector() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          _selectedTimeRange,
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        OutlinedButton(
+          onPressed: () => _showTimeRangeDialog(),
+          child: Row(
+            children: [
+              Text('May 2023'),
+              Icon(Icons.arrow_drop_down),
+            ],
+          ),
+          style: OutlinedButton.styleFrom(
+            padding: EdgeInsets.symmetric(horizontal: 12),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryCards() {
+    return Row(
+      children: [
+        Expanded(child: _buildSummaryCard('Total Sales', '\$12,345', Icons.attach_money, Colors.blue, '+12%')),
+        SizedBox(width: 10),
+        Expanded(child: _buildSummaryCard('Products', '248', Icons.shopping_bag, Colors.green, '+5%')),
+        SizedBox(width: 10),
+        Expanded(child: _buildSummaryCard('Avg. Rating', '4.2', Icons.star, Colors.orange, '+0.3')),
+      ],
+    );
+  }
+
+  Widget _buildSummaryCard(String title, String value, IconData icon, Color color, String change) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: color, size: 20),
+                ),
+                Spacer(),
+                Text(change, style: TextStyle(color: Colors.green)),
+              ],
+            ),
+            SizedBox(height: 8),
+            Text(title, style: TextStyle(color: Colors.grey)),
+            SizedBox(height: 4),
+            Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSalesChart() {
+    final maxValue = _salesData.map((e) => e['value']).reduce((a, b) => a > b ? a : b).toDouble();
     
-//     setState(() {
-//       _analyticsData = _generateMockData();
-//       _isLoading = false;
-//     });
-//   }
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Sales Trend', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                TextButton(
+                  onPressed: () {},
+                  child: Text('View All'),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Container(
+              height: 200,
+              child: CustomPaint(
+                painter: _BarChartPainter(
+                  data: _salesData,
+                  maxValue: maxValue,
+                  barColor: Colors.blue,
+                ),
+              ),
+            ),
+            SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildTimeRangeButton('Week', _selectedTimeRange == 'Week'),
+                _buildTimeRangeButton('Month', _selectedTimeRange == 'Last 30 Days'),
+                _buildTimeRangeButton('Quarter', _selectedTimeRange == 'Quarter'),
+                _buildTimeRangeButton('Year', _selectedTimeRange == 'Year'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-//   List<AnalyticsData> _generateMockData() {
-//     final now = DateTime.now();
-//     final random = Random();
-//     return List.generate(
-//       _selectedRange == TimeRange.day ? 24 : 
-//       _selectedRange == TimeRange.week ? 7 :
-//       _selectedRange == TimeRange.month ? 30 :
-//       _selectedRange == TimeRange.quarter ? 12 :
-//       12,
-//       (index) => AnalyticsData(
-//         date: _selectedRange == TimeRange.day ? 
-//           DateTime(now.year, now.month, now.day, index) :
-//           _selectedRange == TimeRange.week ?
-//           now.subtract(Duration(days: 6 - index)) :
-//           _selectedRange == TimeRange.month ?
-//           now.subtract(Duration(days: 29 - index)) :
-//           _selectedRange == TimeRange.quarter ?
-//           now.subtract(Duration(days: 89 - index * 7)) :
-//           DateTime(now.year - 1 + (index ~/ 12), (index % 12) + 1, 1),
-//         views: 100 + (index * 10) + random.nextInt(50),
-//         purchases: 5 + (index * 2) + random.nextInt(10),
-//         revenue: 100.0 + (index * 25.0) + random.nextDouble() * 50,
-//       ),
-//     );
-//   }
+  Widget _buildTimeRangeButton(String text, bool isSelected) {
+    return TextButton(
+      onPressed: () {
+        setState(() {
+          _selectedTimeRange = text == 'Month' ? 'Last 30 Days' : text;
+        });
+      },
+      child: Text(text),
+      style: TextButton.styleFrom(
+        foregroundColor: isSelected ? Colors.blue : Colors.grey,
+      ),
+    );
+  }
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.grey[50],
-//       appBar: AppBar(
-//         title: Text('Product Analytics'),
-//         elevation: 0,
-//         actions: [
-//           IconButton(
-//             icon: Icon(Icons.refresh),
-//             onPressed: _fetchAnalyticsData,
-//           ),
-//         ],
-//       ),
-//       body: Column(
-//         children: [
-//           // Header with product info
-//           _buildProductHeader(),
-          
-//           // Time range selector
-//           _buildTimeRangeSelector(),
-          
-//           // Summary cards
-//           _buildSummaryCards(),
-          
-//           // Main chart area
-//           Expanded(
-//             child: _isLoading 
-//                 ? Center(child: CircularProgressIndicator())
-//                 : SingleChildScrollView(
-//                     child: Column(
-//                       children: [
-//                         _buildMainChart(),
-//                         if (_showDetails) _buildDetailedMetrics(),
-//                       ],
-//                     ),
-//                   ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
+  Widget _buildCategoryPerformance() {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Category Performance', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                TextButton(
+                  onPressed: () {},
+                  child: Text('View All'),
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
+            Column(
+              children: _categories.map((category) => _buildCategoryItem(category)).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-//   Widget _buildProductHeader() {
-//     return Padding(
-//       padding: const EdgeInsets.all(16.0),
-//       child: Row(
-//         children: [
-//           Container(
-//             width: 60,
-//             height: 60,
-//             decoration: BoxDecoration(
-//               color: Colors.blue[100],
-//               borderRadius: BorderRadius.circular(12),
-//             ),
-//             child: Icon(Icons.shopping_bag, size: 30, color: Colors.blue[800]),
-//           ),
-//           SizedBox(width: 16),
-//           Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               Text(
-//                 'Product #${widget.productId}',
-//                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//               ),
-//               SizedBox(height: 4),
-//               Text(
-//                 'Last updated: ${DateFormat('MMM dd, hh:mm a').format(DateTime.now())}',
-//                 style: TextStyle(color: Colors.grey),
-//               ),
-//             ],
-//           ),
-//         ],
-//       ),
-//     );
-//   }
+  Widget _buildCategoryItem(Map<String, dynamic> category) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: category['color'],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(child: Text(category['name'])),
+              Text('${category['percentage']}%'),
+            ],
+          ),
+          SizedBox(height: 4),
+          LinearProgressIndicator(
+            value: category['percentage'] / 100,
+            backgroundColor: category['color'].withOpacity(0.2),
+            color: category['color'],
+            minHeight: 6,
+          ),
+        ],
+      ),
+    );
+  }
 
-//   Widget _buildTimeRangeSelector() {
-//     return Container(
-//       margin: EdgeInsets.symmetric(horizontal: 16),
-//       decoration: BoxDecoration(
-//         color: Colors.white,
-//         borderRadius: BorderRadius.circular(12),
-//       ),
-//       child: Padding(
-//         padding: const EdgeInsets.all(8.0),
-//         child: Row(
-//           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//           children: TimeRange.values.map((range) {
-//             return GestureDetector(
-//               onTap: () {
-//                 setState(() {
-//                   _selectedRange = range;
-//                   _fetchAnalyticsData();
-//                 });
-//               },
-//               child: Container(
-//                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-//                 decoration: BoxDecoration(
-//                   color: _selectedRange == range 
-//                       ? Colors.blue[50] 
-//                       : Colors.transparent,
-//                   borderRadius: BorderRadius.circular(8),
-//                 ),
-//                 child: Text(
-//                   range.displayName,
-//                   style: TextStyle(
-//                     color: _selectedRange == range 
-//                         ? Colors.blue[800] 
-//                         : Colors.grey[600],
-//                     fontWeight: _selectedRange == range 
-//                         ? FontWeight.bold 
-//                         : FontWeight.normal,
-//                   ),
-//                 ),
-//               ),
-//             );
-//           }).toList(),
-//         ),
-//       ),
-//     );
-//   }
+  Widget _buildTopProducts() {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Top Products', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                TextButton(
+                  onPressed: () {},
+                  child: Text('View All'),
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
+            Column(
+              children: _topProducts.map((product) => _buildProductItem(product)).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-//   Widget _buildSummaryCards() {
-//     if (_analyticsData.isEmpty) return SizedBox();
-    
-//     final totalViews = _analyticsData.fold(0, (sum, data) => sum + data.views);
-//     final totalPurchases = _analyticsData.fold(0, (sum, data) => sum + data.purchases);
-//     final totalRevenue = _analyticsData.fold(0.0, (sum, data) => sum + data.revenue);
-//     final conversionRate = totalViews > 0 ? (totalPurchases / totalViews * 100) : 0;
+  Widget _buildProductItem(Map<String, dynamic> product) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Container(
+        width: 50,
+        height: 50,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(product['image'], color: Colors.grey),
+      ),
+      title: Text(product['name']),
+      subtitle: Row(
+        children: [
+          Icon(Icons.star, color: Colors.amber, size: 16),
+          Text(' ${product['rating']}'),
+        ],
+      ),
+      trailing: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text('\$${product['sales'].toString()}', style: TextStyle(fontWeight: FontWeight.bold)),
+          Text('Sales', style: TextStyle(color: Colors.grey, fontSize: 12)),
+        ],
+      ),
+    );
+  }
 
-//     return Padding(
-//       padding: const EdgeInsets.all(16.0),
-//       child: Wrap(
-//         spacing: 16,
-//         runSpacing: 16,
-//         children: [
-//           _buildMetricCard(
-//             title: 'Total Views',
-//             value: NumberFormat.compact().format(totalViews),
-//             icon: Icons.remove_red_eye,
-//             color: Colors.blue,
-//           ),
-//           _buildMetricCard(
-//             title: 'Purchases',
-//             value: NumberFormat.compact().format(totalPurchases),
-//             icon: Icons.shopping_cart,
-//             color: Colors.green,
-//           ),
-//           _buildMetricCard(
-//             title: 'Revenue',
-//             value: '\$${NumberFormat.compact().format(totalRevenue)}',
-//             icon: Icons.attach_money,
-//             color: Colors.purple,
-//           ),
-//           _buildMetricCard(
-//             title: 'Conversion',
-//             value: '${conversionRate.toStringAsFixed(1)}%',
-//             icon: Icons.trending_up,
-//             color: Colors.orange,
-//           ),
-//         ],
-//       ),
-//     );
-//   }
+  void _showFilterDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Filter Analysis'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildFilterOption('Date Range', _selectedTimeRange),
+            _buildFilterOption('Product Category', _selectedCategory),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // In a real app, you would refresh data here
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Filters applied')),
+              );
+            },
+            child: Text('Apply'),
+          ),
+        ],
+      ),
+    );
+  }
 
-//   Widget _buildMetricCard({
-//     required String title,
-//     required String value,
-//     required IconData icon,
-//     required Color color,
-//   }) {
-//     return Container(
-//       width: 150,
-//       padding: EdgeInsets.all(16),
-//       decoration: BoxDecoration(
-//         color: Colors.white,
-//         borderRadius: BorderRadius.circular(12),
-//         boxShadow: [
-//           BoxShadow(
-//             color: Colors.black12,
-//             blurRadius: 6,
-//             offset: Offset(0, 2),
-//           ),
-//         ],
-//       ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           Row(
-//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//             children: [
-//               Container(
-//                 padding: EdgeInsets.all(6),
-//                 decoration: BoxDecoration(
-//                   color: color.withOpacity(0.2),
-//                   borderRadius: BorderRadius.circular(8),
-//                 ),
-//                 child: Icon(icon, size: 20, color: color),
-//               ),
-//               Icon(Icons.more_vert, size: 20, color: Colors.grey),
-//             ],
-//           ),
-//           SizedBox(height: 16),
-//           Text(
-//             title,
-//             style: TextStyle(
-//               color: Colors.grey[600],
-//               fontSize: 14,
-//             ),
-//           ),
-//           SizedBox(height: 4),
-//           Text(
-//             value,
-//             style: TextStyle(
-//               fontSize: 20,
-//               fontWeight: FontWeight.bold,
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
+  void _showTimeRangeDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Select Time Range'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildTimeRangeOption('Last 7 Days'),
+            _buildTimeRangeOption('Last 30 Days'),
+            _buildTimeRangeOption('Last Quarter'),
+            _buildTimeRangeOption('Last Year'),
+          ],
+        ),
+      ),
+    );
+  }
 
-//   Widget _buildMainChart() {
-//     final dateFormatter = DateFormat(
-//       _selectedRange == TimeRange.day ? 'HH:mm' :
-//       _selectedRange == TimeRange.week ? 'EEE' :
-//       _selectedRange == TimeRange.month ? 'MMM dd' :
-//       _selectedRange == TimeRange.quarter ? 'MMM yyyy' :
-//       'MMM yyyy'
-//     );
+  Widget _buildTimeRangeOption(String text) {
+    return ListTile(
+      title: Text(text),
+      trailing: _selectedTimeRange == text ? Icon(Icons.check, color: Colors.blue) : null,
+      onTap: () {
+        setState(() {
+          _selectedTimeRange = text;
+        });
+        Navigator.pop(context);
+      },
+    );
+  }
 
-//     return Card(
-//       margin: EdgeInsets.all(16),
-//       elevation: 2,
-//       shape: RoundedRectangleBorder(
-//         borderRadius: BorderRadius.circular(12),
-//       ),
-//       child: Padding(
-//         padding: const EdgeInsets.all(16.0),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.stretch,
-//           children: [
-//             Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//               children: [
-//                 Text(
-//                   'Performance Overview',
-//                   style: TextStyle(
-//                     fontSize: 16,
-//                     fontWeight: FontWeight.bold,
-//                   ),
-//                 ),
-//                 IconButton(
-//                   icon: Icon(
-//                     _showDetails ? Icons.expand_less : Icons.expand_more,
-//                   ),
-//                   onPressed: () {
-//                     setState(() => _showDetails = !_showDetails);
-//                   },
-//                 ),
-//               ],
-//             ),
-//             SizedBox(height: 16),
-//             Container(
-//               height: 250,
-//               child: SfCartesianChart(
-//                 primaryXAxis: CategoryAxis(
-//                   labelRotation: _selectedRange == TimeRange.year ? 45 : 0,
-//                   labelIntersectAction: AxisLabelIntersectAction.rotate45,
-//                   labelAlignment: LabelAlignment.center,
-//                   // labelFormatter: (value) => 
-//                   //   dateFormatter.format(_analyticsData[int.parse(value)].date),
-//                 ),
-//                 series: <CartesianSeries>[
-//                   LineSeries<AnalyticsData, String>(
-//                     dataSource: _analyticsData,
-//                     xValueMapper: (data, _) => 
-//                       dateFormatter.format(data.date),
-//                     yValueMapper: (data, _) => data.views,
-//                     name: 'Views',
-//                     color: Colors.blue,
-//                     markerSettings: MarkerSettings(isVisible: true),
-//                   ),
-//                   LineSeries<AnalyticsData, String>(
-//                     dataSource: _analyticsData,
-//                     xValueMapper: (data, _) => 
-//                       dateFormatter.format(data.date),
-//                     yValueMapper: (data, _) => data.purchases * 10,
-//                     name: 'Purchases (x10)',
-//                     color: Colors.green,
-//                     markerSettings: MarkerSettings(isVisible: true),
-//                   ),
-//                 ],
-//                 tooltipBehavior: TooltipBehavior(enable: true),
-//                 legend: Legend(
-//                   isVisible: true,
-//                   position: LegendPosition.top,
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
+  Widget _buildFilterOption(String title, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title),
+          TextButton(
+            onPressed: () {
+              if (title == 'Date Range') {
+                _showTimeRangeDialog();
+              }
+              // Add other filter dialogs here
+            },
+            child: Row(
+              children: [
+                Text(value),
+                Icon(Icons.arrow_forward_ios, size: 14),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-//   Widget _buildDetailedMetrics() {
-//     return Card(
-//       margin: EdgeInsets.all(16),
-//       elevation: 2,
-//       shape: RoundedRectangleBorder(
-//         borderRadius: BorderRadius.circular(12),
-//       ),
-//       child: Padding(
-//         padding: const EdgeInsets.all(16.0),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.stretch,
-//           children: [
-//             Text(
-//               'Detailed Metrics',
-//               style: TextStyle(
-//                 fontSize: 16,
-//                 fontWeight: FontWeight.bold,
-//               ),
-//             ),
-//             SizedBox(height: 16),
-//             DataTable(
-//               columns: [
-//                 DataColumn(label: Text('Date')),
-//                 DataColumn(label: Text('Views', textAlign: TextAlign.end)),
-//                 DataColumn(label: Text('Purchases', textAlign: TextAlign.end)),
-//                 DataColumn(label: Text('Revenue', textAlign: TextAlign.end)),
-//               ],
-//               rows: _analyticsData.reversed.take(5).map((data) {
-//                 return DataRow(cells: [
-//                   DataCell(Text(DateFormat('MMM dd').format(data.date))),
-//                   DataCell(Text(data.views.toString(), 
-//                     textAlign: TextAlign.end)),
-//                   DataCell(Text(data.purchases.toString(), 
-//                     textAlign: TextAlign.end)),
-//                   DataCell(Text('\$${data.revenue.toStringAsFixed(2)}', 
-//                     textAlign: TextAlign.end)),
-//                 ]);
-//               }).toList(),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
+// Custom painter for the bar chart
+class _BarChartPainter extends CustomPainter {
+  final List<Map<String, dynamic>> data;
+  final double maxValue;
+  final Color barColor;
 
-// class AnalyticsData {
-//   final DateTime date;
-//   final int views;
-//   final int purchases;
-//   final double revenue;
+  _BarChartPainter({required this.data, required this.maxValue, required this.barColor});
 
-//   AnalyticsData({
-//     required this.date,
-//     required this.views,
-//     required this.purchases,
-//     required this.revenue,
-//   });
-// }
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = barColor
+      ..style = PaintingStyle.fill;
 
-// enum TimeRange {
-//   day('Day'),
-//   week('Week'),
-//   month('Month'),
-//   quarter('Quarter'),
-//   year('Year');
+    final barWidth = size.width / data.length - 10;
+    final scale = size.height / maxValue;
 
-//   final String displayName;
-//   const TimeRange(this.displayName);
-// }
+    for (var i = 0; i < data.length; i++) {
+      final item = data[i];
+      final barHeight = item['value'] * scale;
+      final x = i * (barWidth + 10) + 5;
+      final y = size.height - barHeight;
+
+      // Draw bar
+      canvas.drawRect(
+        Rect.fromLTWH(x, y, barWidth, barHeight),
+        paint,
+      );
+
+      // Draw label
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: item['day'],
+          style: TextStyle(color: Colors.black, fontSize: 10),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+
+      textPainter.paint(
+        canvas,
+        Offset(x + barWidth / 2 - textPainter.width / 2, size.height + 5),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}

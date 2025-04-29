@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-
 class DeliveryManagementScreen extends StatefulWidget {
   const DeliveryManagementScreen({super.key});
 
@@ -14,39 +13,82 @@ class _DeliveryManagementScreenState extends State<DeliveryManagementScreen> {
     DeliveryPerson(
       id: 'DEL001',
       name: 'Rahul Sharma',
+      email: 'rahul.sharma@example.com',
       phone: '+91 9876543210',
       vehicleNumber: 'MH01AB1234',
       joiningDate: DateTime(2023, 1, 15),
       status: DeliveryStatus.active,
       payments: [
-        DeliveryPayment(date: DateTime(2023, 6, 1), amount: 1200, isPaid: true),
-        DeliveryPayment(date: DateTime(2023, 6, 2), amount: 950, isPaid: true),
-        DeliveryPayment(date: DateTime(2023, 6, 3), amount: 1100, isPaid: false),
+        DeliveryPayment(
+          id: 'PAY001',
+          date: DateTime(2023, 6, 1), 
+          amount: 1200, 
+          status: PaymentStatus.paid
+        ),
+        DeliveryPayment(
+          id: 'PAY002',
+          date: DateTime(2023, 6, 2), 
+          amount: 950, 
+          status: PaymentStatus.paid
+        ),
+        DeliveryPayment(
+          id: 'PAY003',
+          date: DateTime(2023, 6, 3), 
+          amount: 1100, 
+          status: PaymentStatus.pending
+        ),
       ],
     ),
     DeliveryPerson(
       id: 'DEL002',
       name: 'Vikram Patel',
+      email: 'vikram.patel@example.com',
       phone: '+91 8765432109',
       vehicleNumber: 'MH02CD5678',
       joiningDate: DateTime(2023, 3, 10),
       status: DeliveryStatus.active,
       payments: [
-        DeliveryPayment(date: DateTime(2023, 6, 1), amount: 850, isPaid: true),
-        DeliveryPayment(date: DateTime(2023, 6, 2), amount: 750, isPaid: true),
-        DeliveryPayment(date: DateTime(2023, 6, 3), amount: 900, isPaid: false),
+        DeliveryPayment(
+          id: 'PAY004',
+          date: DateTime(2023, 6, 1), 
+          amount: 850, 
+          status: PaymentStatus.paid
+        ),
+        DeliveryPayment(
+          id: 'PAY005',
+          date: DateTime(2023, 6, 2), 
+          amount: 750, 
+          status: PaymentStatus.paid
+        ),
+        DeliveryPayment(
+          id: 'PAY006',
+          date: DateTime(2023, 6, 3), 
+          amount: 900, 
+          status: PaymentStatus.pending
+        ),
       ],
     ),
     DeliveryPerson(
       id: 'DEL003',
       name: 'Sanjay Gupta',
+      email: 'sanjay.gupta@example.com',
       phone: '+91 7654321098',
       vehicleNumber: 'MH03EF9012',
       joiningDate: DateTime(2023, 5, 20),
       status: DeliveryStatus.inactive,
       payments: [
-        DeliveryPayment(date: DateTime(2023, 6, 1), amount: 700, isPaid: true),
-        DeliveryPayment(date: DateTime(2023, 6, 2), amount: 650, isPaid: false),
+        DeliveryPayment(
+          id: 'PAY007',
+          date: DateTime(2023, 6, 1), 
+          amount: 700, 
+          status: PaymentStatus.paid
+        ),
+        DeliveryPayment(
+          id: 'PAY008',
+          date: DateTime(2023, 6, 2), 
+          amount: 650, 
+          status: PaymentStatus.pending
+        ),
       ],
     ),
   ];
@@ -58,8 +100,8 @@ class _DeliveryManagementScreenState extends State<DeliveryManagementScreen> {
         title: const Text('Delivery Management'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _showAddDeliveryPersonDialog(context),
+            icon: const Icon(Icons.filter_list),
+            onPressed: _showFilterOptions,
           ),
         ],
       ),
@@ -67,51 +109,245 @@ class _DeliveryManagementScreenState extends State<DeliveryManagementScreen> {
         itemCount: deliveryPersons.length,
         itemBuilder: (context, index) {
           final person = deliveryPersons[index];
-          return Card(
-            margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: person.status == DeliveryStatus.active
-                    ? Colors.green[100]
-                    : Colors.red[100],
-                child: Icon(
-                  Icons.delivery_dining,
-                  color: person.status == DeliveryStatus.active
-                      ? Colors.green
-                      : Colors.red,
-                ),
-              ),
-              title: Text(person.name),
-              subtitle: Text('ID: ${person.id} | ${person.phone}'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DeliveryPersonDetailScreen(
-                    person: person,
-                    onUpdate: (updatedPerson) {
-                      setState(() {
-                        deliveryPersons[index] = updatedPerson;
-                      });
-                    },
-                    onDelete: () {
-                      setState(() {
-                        deliveryPersons.removeAt(index);
-                      });
-                      Navigator.pop(context);
-                    },
-                  ),
-                ),
-              ),
-            ),
-          );
+          return _buildDeliveryPersonCard(person, index);
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddDeliveryPersonDialog(context),
+        child: const Icon(Icons.add),
       ),
     );
   }
 
+  Widget _buildDeliveryPersonCard(DeliveryPerson person, int index) {
+    final pendingPayments = person.payments.where((p) => p.status == PaymentStatus.pending).length;
+    
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      child: InkWell(
+        onTap: () => _navigateToDetailScreen(person, index),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: person.status == DeliveryStatus.active
+                        ? Colors.green[100]
+                        : Colors.red[100],
+                    child: Icon(
+                      Icons.delivery_dining,
+                      color: person.status == DeliveryStatus.active
+                          ? Colors.green
+                          : Colors.red,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          person.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          person.email,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (pendingPayments > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.orange[50],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '$pendingPayments pending',
+                        style: TextStyle(
+                          color: Colors.orange[800],
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'ID: ${person.id}',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => _showPaymentsDialog(person, index),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue[50],
+                      foregroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      minimumSize: const Size(0, 30),
+                    ),
+                    child: const Text('Payments'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToDetailScreen(DeliveryPerson person, int index) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DeliveryPersonDetailScreen(
+          person: person,
+          onUpdate: (updatedPerson) {
+            setState(() {
+              deliveryPersons[index] = updatedPerson;
+            });
+          },
+          onDelete: () {
+            setState(() {
+              deliveryPersons.removeAt(index);
+            });
+            Navigator.pop(context);
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showPaymentsDialog(DeliveryPerson person, int index) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('${person.name}\'s Payments'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ...person.payments.map((payment) => _buildPaymentListItem(
+                    payment,
+                    person,
+                    index,
+                    showActions: true,
+                  )),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildPaymentListItem(
+    DeliveryPayment payment, 
+    DeliveryPerson person,
+    int personIndex, {
+    bool showActions = false,
+  }) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Icon(
+              payment.status == PaymentStatus.paid 
+                ? Icons.check_circle 
+                : Icons.pending,
+              color: payment.status == PaymentStatus.paid 
+                ? Colors.green 
+                : Colors.orange,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '₹${payment.amount.toStringAsFixed(2)}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    DateFormat('dd MMM yyyy').format(payment.date),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            if (showActions)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (payment.status == PaymentStatus.pending)
+                    IconButton(
+                      icon: const Icon(Icons.payment, size: 20),
+                      color: Colors.green,
+                      onPressed: () => _markAsPaid(person, personIndex, payment),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, size: 20),
+                    color: Colors.red,
+                    onPressed: () => _deletePayment(person, personIndex, payment),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _markAsPaid(DeliveryPerson person, int personIndex, DeliveryPayment payment) {
+    setState(() {
+      deliveryPersons[personIndex] = person.copyWith(
+        payments: person.payments.map((p) {
+          if (p.id == payment.id) {
+            return p.copyWith(status: PaymentStatus.paid);
+          }
+          return p;
+        }).toList(),
+      );
+    });
+  }
+
+  void _deletePayment(DeliveryPerson person, int personIndex, DeliveryPayment payment) {
+    setState(() {
+      deliveryPersons[personIndex] = person.copyWith(
+        payments: person.payments.where((p) => p.id != payment.id).toList(),
+      );
+    });
+  }
+
   void _showAddDeliveryPersonDialog(BuildContext context) {
     final nameController = TextEditingController();
+    final emailController = TextEditingController();
     final phoneController = TextEditingController();
     final vehicleController = TextEditingController();
 
@@ -120,23 +356,30 @@ class _DeliveryManagementScreenState extends State<DeliveryManagementScreen> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Add New Delivery Person'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Full Name'),
-              ),
-              TextField(
-                controller: phoneController,
-                decoration: const InputDecoration(labelText: 'Phone Number'),
-                keyboardType: TextInputType.phone,
-              ),
-              TextField(
-                controller: vehicleController,
-                decoration: const InputDecoration(labelText: 'Vehicle Number'),
-              ),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Full Name'),
+                ),
+                TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(labelText: 'Email'),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                TextField(
+                  controller: phoneController,
+                  decoration: const InputDecoration(labelText: 'Phone Number'),
+                  keyboardType: TextInputType.phone,
+                ),
+                TextField(
+                  controller: vehicleController,
+                  decoration: const InputDecoration(labelText: 'Vehicle Number'),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -148,6 +391,7 @@ class _DeliveryManagementScreenState extends State<DeliveryManagementScreen> {
                 final newPerson = DeliveryPerson(
                   id: 'DEL${deliveryPersons.length + 1}'.padLeft(3, '0'),
                   name: nameController.text,
+                  email: emailController.text,
                   phone: phoneController.text,
                   vehicleNumber: vehicleController.text,
                   joiningDate: DateTime.now(),
@@ -162,6 +406,48 @@ class _DeliveryManagementScreenState extends State<DeliveryManagementScreen> {
               child: const Text('Add'),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  void _showFilterOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Filter Options',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                title: const Text('All Delivery Persons'),
+                onTap: () {
+                  // Implement filter logic
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Text('Active Only'),
+                onTap: () {
+                  // Implement filter logic
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Text('With Pending Payments'),
+                onTap: () {
+                  // Implement filter logic
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
         );
       },
     );
@@ -188,6 +474,7 @@ class DeliveryPersonDetailScreen extends StatefulWidget {
 class _DeliveryPersonDetailScreenState extends State<DeliveryPersonDetailScreen> {
   late DeliveryPerson _currentPerson;
   final _paymentAmountController = TextEditingController();
+  final List<DeliveryPayment> _selectedPayments = [];
 
   @override
   void initState() {
@@ -198,7 +485,7 @@ class _DeliveryPersonDetailScreenState extends State<DeliveryPersonDetailScreen>
   @override
   Widget build(BuildContext context) {
     final unpaidAmount = _currentPerson.payments
-        .where((payment) => !payment.isPaid)
+        .where((payment) => payment.status == PaymentStatus.pending)
         .fold(0.0, (sum, payment) => sum + payment.amount);
 
     final monthlyEarnings = _currentPerson.payments
@@ -234,9 +521,23 @@ class _DeliveryPersonDetailScreenState extends State<DeliveryPersonDetailScreen>
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddPaymentDialog,
-        child: const Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_selectedPayments.isNotEmpty)
+            FloatingActionButton(
+              heroTag: 'paySelected',
+              onPressed: _paySelectedPayments,
+              backgroundColor: Colors.green,
+              child: const Icon(Icons.payment),
+            ),
+          const SizedBox(height: 16),
+          FloatingActionButton(
+            heroTag: 'addPayment',
+            onPressed: _showAddPaymentDialog,
+            child: const Icon(Icons.add),
+          ),
+        ],
       ),
     );
   }
@@ -281,6 +582,7 @@ class _DeliveryPersonDetailScreenState extends State<DeliveryPersonDetailScreen>
               ],
             ),
             const SizedBox(height: 16),
+            _buildDetailRow(Icons.email, _currentPerson.email),
             _buildDetailRow(Icons.phone, _currentPerson.phone),
             _buildDetailRow(Icons.directions_bike, _currentPerson.vehicleNumber),
             _buildDetailRow(
@@ -307,7 +609,9 @@ class _DeliveryPersonDetailScreenState extends State<DeliveryPersonDetailScreen>
         children: [
           Icon(icon, color: color ?? Colors.grey[600], size: 20),
           const SizedBox(width: 16),
-          Text(text, style: TextStyle(color: color ?? Colors.grey[800])),
+          Expanded(
+            child: Text(text, style: TextStyle(color: color ?? Colors.grey[800])),
+          ),
         ],
       ),
     );
@@ -318,7 +622,7 @@ class _DeliveryPersonDetailScreenState extends State<DeliveryPersonDetailScreen>
       children: [
         Expanded(
           child: _buildStatCard(
-            'Unpaid Amount',
+            'Pending Payments',
             '₹${unpaidAmount.toStringAsFixed(2)}',
             Colors.orange,
           ),
@@ -369,99 +673,239 @@ class _DeliveryPersonDetailScreenState extends State<DeliveryPersonDetailScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Payment History',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Payment History',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            if (_currentPerson.payments.isNotEmpty)
+              TextButton(
+                onPressed: _toggleSelectMode,
+                child: Text(
+                  _selectedPayments.isNotEmpty ? 'Cancel' : 'Select',
+                  style: const TextStyle(color: Colors.blue),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 10),
         if (_currentPerson.payments.isEmpty)
           const Padding(
             padding: EdgeInsets.all(16),
-            child: Center(child: Text('No payments recorded yet')),),
+            child: Center(child: Text('No payments recorded yet')),
+          ),
         if (_currentPerson.payments.isNotEmpty)
           ..._currentPerson.payments.map((payment) {
-            return Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                leading: Icon(
-                  payment.isPaid ? Icons.check_circle : Icons.pending,
-                  color: payment.isPaid ? Colors.green : Colors.orange,
-                ),
-                title: Text(
-                  '₹${payment.amount.toStringAsFixed(2)}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  DateFormat('dd MMM yyyy').format(payment.date),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit, size: 20),
-                      onPressed: () => _editPayment(payment),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, size: 20),
-                      onPressed: () => _deletePayment(payment),
-                    ),
-                  ],
-                ),
-              ),
-            );
+            return _buildPaymentListItem(payment);
           }).toList(),
       ],
     );
   }
 
+  Widget _buildPaymentListItem(DeliveryPayment payment) {
+    final isSelected = _selectedPayments.contains(payment);
+    
+    return InkWell(
+      onLongPress: _selectedPayments.isEmpty ? () {
+        setState(() {
+          _selectedPayments.add(payment);
+        });
+      } : null,
+      onTap: _selectedPayments.isNotEmpty ? () {
+        setState(() {
+          if (isSelected) {
+            _selectedPayments.remove(payment);
+          } else {
+            _selectedPayments.add(payment);
+          }
+        });
+      } : null,
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 8),
+        color: isSelected ? Colors.blue[50] : null,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              if (_selectedPayments.isNotEmpty)
+                Icon(
+                  isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                  color: isSelected ? Colors.blue : Colors.grey,
+                ),
+              if (_selectedPayments.isNotEmpty) const SizedBox(width: 8),
+              Icon(
+                payment.status == PaymentStatus.paid 
+                  ? Icons.check_circle 
+                  : Icons.pending,
+                color: payment.status == PaymentStatus.paid 
+                  ? Colors.green 
+                  : Colors.orange,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '₹${payment.amount.toStringAsFixed(2)}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      DateFormat('dd MMM yyyy').format(payment.date),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              if (_selectedPayments.isEmpty)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (payment.status == PaymentStatus.pending)
+                      IconButton(
+                        icon: const Icon(Icons.payment, size: 20),
+                        color: Colors.green,
+                        onPressed: () => _markPaymentAsPaid(payment),
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, size: 20),
+                      color: Colors.red,
+                      onPressed: () => _deletePayment(payment),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _toggleSelectMode() {
+    setState(() {
+      if (_selectedPayments.isNotEmpty) {
+        _selectedPayments.clear();
+      }
+    });
+  }
+
+  void _paySelectedPayments() {
+    setState(() {
+      _currentPerson = _currentPerson.copyWith(
+        payments: _currentPerson.payments.map((payment) {
+          if (_selectedPayments.contains(payment)) {
+            return payment.copyWith(status: PaymentStatus.paid);
+          }
+          return payment;
+        }).toList(),
+      );
+      _selectedPayments.clear();
+    });
+    widget.onUpdate(_currentPerson);
+  }
+
+  void _markPaymentAsPaid(DeliveryPayment payment) {
+    setState(() {
+      _currentPerson = _currentPerson.copyWith(
+        payments: _currentPerson.payments.map((p) {
+          if (p.id == payment.id) {
+            return p.copyWith(status: PaymentStatus.paid);
+          }
+          return p;
+        }).toList(),
+      );
+    });
+    widget.onUpdate(_currentPerson);
+  }
+
+  void _deletePayment(DeliveryPayment payment) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Confirm Delete'),
+          content: const Text('Are you sure you want to delete this payment record?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () {
+                setState(() {
+                  _currentPerson = _currentPerson.copyWith(
+                    payments: _currentPerson.payments.where((p) => p.id != payment.id).toList(),
+                  );
+                });
+                widget.onUpdate(_currentPerson);
+                Navigator.pop(context);
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showEditDialog() {
     final nameController = TextEditingController(text: _currentPerson.name);
+    final emailController = TextEditingController(text: _currentPerson.email);
     final phoneController = TextEditingController(text: _currentPerson.phone);
-    final vehicleController =
-        TextEditingController(text: _currentPerson.vehicleNumber);
+    final vehicleController = TextEditingController(text: _currentPerson.vehicleNumber);
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text('Edit Delivery Person'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Full Name'),
-              ),
-              TextField(
-                controller: phoneController,
-                decoration: const InputDecoration(labelText: 'Phone Number'),
-                keyboardType: TextInputType.phone,
-              ),
-              TextField(
-                controller: vehicleController,
-                decoration: const InputDecoration(labelText: 'Vehicle Number'),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<DeliveryStatus>(
-                value: _currentPerson.status,
-                items: DeliveryStatus.values.map((status) {
-                  return DropdownMenuItem(
-                    value: status,
-                    child: Text(status == DeliveryStatus.active
-                        ? 'Active'
-                        : 'Inactive'),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _currentPerson = _currentPerson.copyWith(status: value);
-                    });
-                  }
-                },
-                decoration: const InputDecoration(labelText: 'Status'),
-              ),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Full Name'),
+                ),
+                TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(labelText: 'Email'),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                TextField(
+                  controller: phoneController,
+                  decoration: const InputDecoration(labelText: 'Phone Number'),
+                  keyboardType: TextInputType.phone,
+                ),
+                TextField(
+                  controller: vehicleController,
+                  decoration: const InputDecoration(labelText: 'Vehicle Number'),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<DeliveryStatus>(
+                  value: _currentPerson.status,
+                  items: DeliveryStatus.values.map((status) {
+                    return DropdownMenuItem(
+                      value: status,
+                      child: Text(status == DeliveryStatus.active
+                          ? 'Active'
+                          : 'Inactive'),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _currentPerson = _currentPerson.copyWith(status: value);
+                      });
+                    }
+                  },
+                  decoration: const InputDecoration(labelText: 'Status'),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -473,6 +917,7 @@ class _DeliveryPersonDetailScreenState extends State<DeliveryPersonDetailScreen>
                 setState(() {
                   _currentPerson = _currentPerson.copyWith(
                     name: nameController.text,
+                    email: emailController.text,
                     phone: phoneController.text,
                     vehicleNumber: vehicleController.text,
                   );
@@ -516,30 +961,47 @@ class _DeliveryPersonDetailScreenState extends State<DeliveryPersonDetailScreen>
 
   void _showAddPaymentDialog() {
     _paymentAmountController.clear();
+    final dateController = TextEditingController(
+      text: DateFormat('dd/MM/yyyy').format(DateTime.now()),
+    );
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text('Add Payment'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _paymentAmountController,
-                decoration: const InputDecoration(
-                  labelText: 'Amount',
-                  prefixText: '₹',
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _paymentAmountController,
+                  decoration: const InputDecoration(
+                    labelText: 'Amount',
+                    prefixText: '₹',
+                  ),
+                  keyboardType: TextInputType.number,
                 ),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              CheckboxListTile(
-                title: const Text('Mark as paid'),
-                value: true,
-                onChanged: (value) {},
-              ),
-            ],
+                TextField(
+                  controller: dateController,
+                  decoration: const InputDecoration(
+                    labelText: 'Date',
+                    suffixIcon: Icon(Icons.calendar_today),
+                  ),
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime.now(),
+                    );
+                    if (date != null) {
+                      dateController.text = DateFormat('dd/MM/yyyy').format(date);
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -550,14 +1012,22 @@ class _DeliveryPersonDetailScreenState extends State<DeliveryPersonDetailScreen>
               onPressed: () {
                 final amount = double.tryParse(_paymentAmountController.text) ?? 0;
                 if (amount > 0) {
+                  final dateParts = dateController.text.split('/');
+                  final date = DateTime(
+                    int.parse(dateParts[2]),
+                    int.parse(dateParts[1]),
+                    int.parse(dateParts[0]),
+                  );
+
                   setState(() {
                     _currentPerson = _currentPerson.copyWith(
                       payments: [
                         ..._currentPerson.payments,
                         DeliveryPayment(
-                          date: DateTime.now(),
+                          id: 'PAY${_currentPerson.payments.length + 1}'.padLeft(3, '0'),
+                          date: date,
                           amount: amount,
-                          isPaid: true,
+                          status: PaymentStatus.pending,
                         ),
                       ],
                     );
@@ -573,136 +1043,15 @@ class _DeliveryPersonDetailScreenState extends State<DeliveryPersonDetailScreen>
       },
     );
   }
-
-  void _editPayment(DeliveryPayment payment) {
-    final amountController = TextEditingController(text: payment.amount.toString());
-    final dateController = TextEditingController(
-      text: DateFormat('dd/MM/yyyy').format(payment.date),
-    );
-    var isPaid = payment.isPaid;
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Payment'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: amountController,
-                decoration: const InputDecoration(
-                  labelText: 'Amount',
-                  prefixText: '₹',
-                ),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: dateController,
-                decoration: const InputDecoration(
-                  labelText: 'Date',
-                  suffixIcon: Icon(Icons.calendar_today),
-                ),
-                onTap: () async {
-                  final date = await showDatePicker(
-                    context: context,
-                    initialDate: payment.date,
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime.now(),
-                  );
-                  if (date != null) {
-                    dateController.text = DateFormat('dd/MM/yyyy').format(date);
-                  }
-                },
-              ),
-              CheckboxListTile(
-                title: const Text('Paid'),
-                value: isPaid,
-                onChanged: (value) {
-                  setState(() {
-                    isPaid = value ?? false;
-                  });
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final amount = double.tryParse(amountController.text) ?? 0;
-                final dateParts = dateController.text.split('/');
-                final date = DateTime(
-                  int.parse(dateParts[2]),
-                  int.parse(dateParts[1]),
-                  int.parse(dateParts[0]),
-                );
-
-                setState(() {
-                  _currentPerson = _currentPerson.copyWith(
-                    payments: _currentPerson.payments.map((p) {
-                      if (p == payment) {
-                        return p.copyWith(
-                          amount: amount,
-                          date: date,
-                          isPaid: isPaid,
-                        );
-                      }
-                      return p;
-                    }).toList(),
-                  );
-                });
-                widget.onUpdate(_currentPerson);
-                Navigator.pop(context);
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _deletePayment(DeliveryPayment payment) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Confirm Delete'),
-          content: const Text('Are you sure you want to delete this payment record?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              onPressed: () {
-                setState(() {
-                  _currentPerson = _currentPerson.copyWith(
-                    payments: _currentPerson.payments.where((p) => p != payment).toList(),
-                  );
-                });
-                widget.onUpdate(_currentPerson);
-                Navigator.pop(context);
-              },
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 }
 
 enum DeliveryStatus { active, inactive }
+enum PaymentStatus { pending, paid }
 
 class DeliveryPerson {
   final String id;
   final String name;
+  final String email;
   final String phone;
   final String vehicleNumber;
   final DateTime joiningDate;
@@ -712,6 +1061,7 @@ class DeliveryPerson {
   DeliveryPerson({
     required this.id,
     required this.name,
+    required this.email,
     required this.phone,
     required this.vehicleNumber,
     required this.joiningDate,
@@ -722,6 +1072,7 @@ class DeliveryPerson {
   DeliveryPerson copyWith({
     String? id,
     String? name,
+    String? email,
     String? phone,
     String? vehicleNumber,
     DateTime? joiningDate,
@@ -731,6 +1082,7 @@ class DeliveryPerson {
     return DeliveryPerson(
       id: id ?? this.id,
       name: name ?? this.name,
+      email: email ?? this.email,
       phone: phone ?? this.phone,
       vehicleNumber: vehicleNumber ?? this.vehicleNumber,
       joiningDate: joiningDate ?? this.joiningDate,
@@ -741,25 +1093,29 @@ class DeliveryPerson {
 }
 
 class DeliveryPayment {
+  final String id;
   final DateTime date;
   final double amount;
-  final bool isPaid;
+  final PaymentStatus status;
 
   DeliveryPayment({
+    required this.id,
     required this.date,
     required this.amount,
-    required this.isPaid,
+    required this.status,
   });
 
   DeliveryPayment copyWith({
+    String? id,
     DateTime? date,
     double? amount,
-    bool? isPaid,
+    PaymentStatus? status,
   }) {
     return DeliveryPayment(
+      id: id ?? this.id,
       date: date ?? this.date,
       amount: amount ?? this.amount,
-      isPaid: isPaid ?? this.isPaid,
+      status: status ?? this.status,
     );
   }
 }

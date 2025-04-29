@@ -4,6 +4,23 @@ import 'package:inventory_manager/Admin/Delivery_partners.dart';
 import 'package:inventory_manager/Admin/MenuManagementScreen.dart';
 import 'package:inventory_manager/Admin/ProductAnalyticsScreen.dart';
 
+void main() => runApp(const MyApp());
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Inventory Manager',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: const AdminHome(),
+    );
+  }
+}
 
 class AdminHome extends StatefulWidget {
   const AdminHome({super.key});
@@ -21,7 +38,7 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
     const AdminDashboard(),
     const MenuManagementScreen(),
     const DeliveryManagementScreen(),
-    //const ProductAnalyticsDashboard(productId: '12345',),
+     ProductAnalysisScreen(),
   ];
 
   @override
@@ -67,58 +84,58 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
       drawer: isLargeScreen ? null : _buildDrawer(theme),
     );
   }
+
   final List<String> _titles = [
-  'Dashboard',
-  'Menu Management',
-  'Delivery Management',
-  'Analytics',
-];
+    'Dashboard',
+    'Menu Management',
+    'Delivery Management',
+    'Analytics',
+  ];
 
-AppBar _buildAppBar(ThemeData theme, bool isLargeScreen) {
-  return AppBar(
-    title: Text(
-      _titles[_currentIndex],  // <-- title changes dynamically
-      style: const TextStyle(fontWeight: FontWeight.w600),
-    ),
-    centerTitle: !isLargeScreen,
-    elevation: 0,
-    actions: [
-      IconButton(
-        icon: const Icon(Icons.notifications_outlined),
-        onPressed: () {},
-        tooltip: 'Notifications',
+  AppBar _buildAppBar(ThemeData theme, bool isLargeScreen) {
+    return AppBar(
+      title: Text(
+        _titles[_currentIndex],
+        style: const TextStyle(fontWeight: FontWeight.w600),
       ),
-      if (isLargeScreen) ...[
-        _NavBarItem(
-          icon: Icons.dashboard,
-          label: _titles[0], // <-- use titles list here
-          isActive: _currentIndex == 0,
-          onTap: () => _updateIndex(0),
+      centerTitle: !isLargeScreen,
+      elevation: 0,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.notifications_outlined),
+          onPressed: () {},
+          tooltip: 'Notifications',
         ),
-        _NavBarItem(
-          icon: Icons.restaurant_menu,
-          label: _titles[1], // <-- use titles list here
-          isActive: _currentIndex == 1,
-          onTap: () => _updateIndex(1),
-        ),
-        _NavBarItem(
-          icon: Icons.delivery_dining,
-          label: _titles[2], // <-- use titles list here
-          isActive: _currentIndex == 2,
-          onTap: () => _updateIndex(2),
-        ),
-        _NavBarItem(
-          icon: Icons.analytics,
-          label: _titles[3], // <-- use titles list here
-          isActive: _currentIndex == 3,
-          onTap: () => _updateIndex(3),
-        ),
+        if (isLargeScreen) ...[
+          _NavBarItem(
+            icon: Icons.dashboard,
+            label: _titles[0],
+            isActive: _currentIndex == 0,
+            onTap: () => _updateIndex(0),
+          ),
+          _NavBarItem(
+            icon: Icons.restaurant_menu,
+            label: _titles[1],
+            isActive: _currentIndex == 1,
+            onTap: () => _updateIndex(1),
+          ),
+          _NavBarItem(
+            icon: Icons.delivery_dining,
+            label: _titles[2],
+            isActive: _currentIndex == 2,
+            onTap: () => _updateIndex(2),
+          ),
+          _NavBarItem(
+            icon: Icons.analytics,
+            label: _titles[3],
+            isActive: _currentIndex == 3,
+            onTap: () => _updateIndex(3),
+          ),
+        ],
+        const SizedBox(width: 12),
       ],
-      const SizedBox(width: 12),
-    ],
-  );
-}
-
+    );
+  }
 
   Widget _buildDrawer(ThemeData theme) {
     return Drawer(
@@ -225,11 +242,13 @@ AppBar _buildAppBar(ThemeData theme, bool isLargeScreen) {
   }
 
   void _updateIndex(int index) {
-    setState(() {
-      _currentIndex = index;
-      _animationController.reset();
-      _animationController.forward();
-    });
+    if (_currentIndex != index) {
+      setState(() {
+        _currentIndex = index;
+        _animationController.reset();
+        _animationController.forward();
+      });
+    }
   }
 }
 
@@ -421,7 +440,7 @@ class AdminDashboard extends StatelessWidget {
           children: [
             if (isLargeScreen) _buildOrderTableHeader(),
             SizedBox(
-              height: isLargeScreen ? 400 : 300, // Fixed height to prevent overflow
+              height: isLargeScreen ? 400 : 300,
               child: ListView.separated(
                 shrinkWrap: true,
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -451,7 +470,6 @@ class AdminDashboard extends StatelessWidget {
           Expanded(flex: 2, child: Text('Items', style: TextStyle(fontWeight: FontWeight.bold))),
           Expanded(flex: 1, child: Text('Amount', style: TextStyle(fontWeight: FontWeight.bold))),
           Expanded(flex: 1, child: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-          Expanded(flex: 1, child: SizedBox()),
         ],
       ),
     );
@@ -630,6 +648,14 @@ class _OrderTableRow extends StatelessWidget {
     final statusColors = [Colors.orange, Colors.blue, Colors.green, Colors.red];
     final status = statuses[orderIndex % statuses.length];
     final statusColor = statusColors[statuses.indexOf(status)];
+    final foodIcons = [
+      Icons.lunch_dining,
+      Icons.breakfast_dining,
+      Icons.dinner_dining,
+      Icons.local_pizza,
+      Icons.local_cafe
+    ];
+    final icon = foodIcons[orderIndex % foodIcons.length];
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -637,7 +663,13 @@ class _OrderTableRow extends StatelessWidget {
         children: [
           Expanded(
             flex: 1,
-            child: Text('#${1230 + orderIndex}', overflow: TextOverflow.ellipsis),
+            child: Row(
+              children: [
+                Icon(icon, size: 20, color: Colors.blue),
+                const SizedBox(width: 8),
+                Text('#${1230 + orderIndex}', overflow: TextOverflow.ellipsis),
+              ],
+            ),
           ),
           Expanded(
             flex: 2,
@@ -672,13 +704,6 @@ class _OrderTableRow extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(
-            flex: 1,
-            child: IconButton(
-              icon: const Icon(Icons.more_vert, size: 20),
-              onPressed: () {},
-            ),
-          ),
         ],
       ),
     );
@@ -696,56 +721,42 @@ class _OrderListItem extends StatelessWidget {
     final statusColors = [Colors.orange, Colors.blue, Colors.green, Colors.red];
     final status = statuses[orderIndex % statuses.length];
     final statusColor = statusColors[statuses.indexOf(status)];
+    final foodIcons = [
+      Icons.lunch_dining,
+      Icons.breakfast_dining,
+      Icons.dinner_dining,
+      Icons.local_pizza,
+      Icons.local_cafe
+    ];
+    final icon = foodIcons[orderIndex % foodIcons.length];
 
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: CircleAvatar(
         backgroundColor: Colors.blue[50],
-        child: Text('#${1230 + orderIndex}', style: const TextStyle(color: Colors.blue)),
+        child: Icon(icon, size: 20, color: Colors.blue),
       ),
       title: Text('Customer ${orderIndex + 1}', 
         overflow: TextOverflow.ellipsis,
         style: const TextStyle(fontWeight: FontWeight.w500)),
       subtitle: Text('${orderIndex + 2} items • \$${24.50 + orderIndex * 5}',
         overflow: TextOverflow.ellipsis),
-      trailing: SizedBox(
-        width: 120,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Container(
-              constraints: const BoxConstraints(maxWidth: 80),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                status,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: statusColor,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.more_vert, size: 20),
-              onPressed: () {},
-            ),
-          ],
+      trailing: Container(
+        constraints: const BoxConstraints(maxWidth: 100),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: statusColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          status,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: statusColor,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     );
-  }
-}
-
-
-class AnalyticsScreen extends StatelessWidget {
-  const AnalyticsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(child: Text('Analytics', style: TextStyle(fontSize: 24)));
   }
 }
